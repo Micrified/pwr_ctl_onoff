@@ -12,8 +12,12 @@
 #include <linux/signal.h>
 #include <linux/syscalls.h>
 
+#include <linux/interrupt.h>
+#include <asm/io.h>
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("John Doe <j.doe@acme.inc>");
+
 
 /*
  *******************************************************************************
@@ -21,22 +25,27 @@ MODULE_AUTHOR("John Doe <j.doe@acme.inc>");
  *******************************************************************************
 */
 
+
 // Kernel module functions
-static int pwr_ctl_open (struct inode *inode, struct file *file);
-static int pwr_ctl_release (struct inode *inode, struct file *file);
-static long pwr_ctl_ioctl (struct file *file, unsigned int cmd, unsigned long arg);
-static ssize_t pwr_ctl_read (struct file *file, char __user *buf, size_t count, loff_t *offset);
-static ssize_t pwr_ctl_write (struct file *file, const char __user *buf, size_t count, loff_t *offset);
-static int pwr_ctl_uevent (struct device *dev, struct kobj_uevent_env *env);
+static int pwr_ctl_open (struct inode *, struct file *);
+static int pwr_ctl_release (struct inode *, struct file *);
+static long pwr_ctl_ioctl (struct file *, unsigned int, unsigned long);
+static ssize_t pwr_ctl_read (struct file *, char __user *, size_t, loff_t *);
+static ssize_t pwr_ctl_write (struct file *, const char __user *, size_t, loff_t *);
+static int pwr_ctl_uevent (struct device *, struct kobj_uevent_env *);
 
 // Supporting module functions
-static int pwr_ctl_signal (pid_t pid, int sig);
+static int pwr_ctl_signal (pid_t, int);
+
+// Interrupt related functions
+irqreturn_t irq_handler (int, void *);
 
 /*
  *******************************************************************************
  *                             Symbolic constants                              *
  *******************************************************************************
 */
+
 
 // Device name
 #define DEV_NAME		"pwr_ctl_onoff"
@@ -45,13 +54,18 @@ static int pwr_ctl_signal (pid_t pid, int sig);
 #define DEV_MAX			1
 
 // Fixed output buffer size
-#define OUT_BUF_SIZE    sizeof(pid_t)
+#define OUT_BUF_SIZE    	sizeof(pid_t)
+
+// Number of interrupt to capture
+#define INTERRUPT_NO    	48
+
 
 /*
  *******************************************************************************
  *                              Type definitions                               *
  *******************************************************************************
 */
+
 
 // Device data container
 struct pwr_ctl_data {
@@ -65,11 +79,13 @@ enum pwr_ctl_state {
 	STATE_WRITE_COMPLETE
 };
 
+
 /*
  *******************************************************************************
  *                                 Global data                                 *
  *******************************************************************************
 */
+
 
 // Device major ID
 static int g_dev_major;
@@ -104,11 +120,13 @@ static uint8_t g_out_buffer[OUT_BUF_SIZE];
 // Number of bytes written from the buffer
 static off_t g_out_buffer_offset = 0;
 
+
 /*
  *******************************************************************************
  *                            Function definitions                             *
  *******************************************************************************
 */
+
 
 static int __init pwr_ctl_init (void)
 {
@@ -150,7 +168,9 @@ static int __init pwr_ctl_init (void)
 		return err;
 	}
 
-	return 0;
+	// Register IRQ handler
+	return request_irq(INTERRUPT_NO, irq_handler, IRQF_SHARED, 
+		"power-onoff-button-irq-handler", (void *)(irq_handler));
 }
 
 static int pwr_ctl_uevent (struct device *dev, struct kobj_uevent_env *env)
@@ -264,12 +284,20 @@ static int pwr_ctl_signal (pid_t pid, int sig)
 	return kill_pid(find_vpid(pid), sig, 1);
 }
 
+irqreturn_t irq_handler (int irq, void *dev_irq)
+{
+	pr_err("irq()\n");
+	pwr_ctl_signal(g_pwr_ctl_data.delegate_pid, SIGUSR1);
+	return IRQ_HANDLED;
+}
+
 
 /*
  *******************************************************************************
  *                                Kernel hooks                                 *
  *******************************************************************************
 */
+
 
 module_init(pwr_ctl_init);
 module_exit(pwr_ctl_exit);

@@ -13,11 +13,15 @@ ccflags-y += $(C_FLAGS)
 obj-m += $(BINARY).o
 
 # Rule for making all
-all: $(BINARY).ko
+all: $(BINARY).ko test_$(BINARY)
 
 # Rule for building pwr_ctl_onoff.ko
 $(BINARY).ko:
 	make -C $(KERNEL) M=$(KMOD_DIR) modules
+
+# Rule for building the module test program
+test_$(BINARY): test_pwr_ctl_onoff.c
+	cc -o $@ $^ $(C_FLAGS)
 
 # Install the new module into the character device module directory
 install:
@@ -32,3 +36,4 @@ uninstall:
 # Invoke clean in kernel module site
 clean:
 	make -C $(KERNEL) M=$(KMOD_DIR) clean
+	rm test_$(BINARY)
