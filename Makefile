@@ -35,4 +35,3 @@ uninstall:
 # Invoke clean in kernel module site
 clean:
 	make -C $(KERNEL) M=$(KMOD_DIR) clean
-	rm test_$(BINARY)
