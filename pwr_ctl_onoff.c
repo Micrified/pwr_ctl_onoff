@@ -2,18 +2,13 @@
 #include <linux/device.h>
 #include <linux/module.h>
 #include <linux/cdev.h>
-#include <linux/fs.h>
 #include <linux/uaccess.h>
 #include <linux/init.h>
 
 #include <linux/sched.h>
-#include <linux/rcupdate.h>
-#include <linux/pid.h>
-#include <linux/signal.h>
 #include <linux/syscalls.h>
 
 #include <linux/interrupt.h>
-#include <asm/io.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("John Doe <j.doe@acme.inc>");
