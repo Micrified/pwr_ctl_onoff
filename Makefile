@@ -1,33 +1,14 @@
-BINARY      := pwr_ctl_onoff
-KERNEL      := /lib/modules/$(shell uname -r)/build
-C_FLAGS     := -Wall
-KMOD_DIR    := $(shell pwd)
-TARGET_PATH := /lib/modules/$(shell uname -r)/kernel/drivers/char
-KBUILD_EXTRA_SYMBOLS := $(shell pwd)/Module.symvers
+obj-m := pwr_ctl_onoff.o
 
-# Flags for the C compiler
-ccflags-y += $(C_FLAGS)
+SRC := $(shell pwd)
 
-# Adds binary name (pwr_ctl_onoff.o) to obj-m variable
-obj-m += $(BINARY).o
+all:
+	$(MAKE) -C $(KERNEL_SRC) M=$(SRC)
 
-# Rule for making all
-all: $(BINARY).ko
+modules_install:
+	$(MAKE) -C $(KERNEL_SRC) M=$(SRC) modules_install
 
-# Rule for building pwr_ctl_onoff.ko
-$(BINARY).ko:
-	make -C $(KERNEL) M=$(KMOD_DIR) modules
-
-# Install the new module into the character device module directory
-install:
-	cp $(BINARY).ko $(TARGET_PATH)
-	depmod -a
-
-# Remove the module from the character device module directory
-uninstall:
-	rm $(TARGET_PATH)/$(BINARY).ko
-	depmod -a
-
-# Invoke clean in kernel module site
 clean:
-	make -C $(KERNEL) M=$(KMOD_DIR) clean
+	rm -f *.o *~ core .depend .*.cmd *.ko *.mod.c
+	rm -f Module.markers Module.symvers modules.order
+	rm -rf .tmp_versions Modules.symvers
