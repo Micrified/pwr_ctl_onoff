@@ -52,7 +52,7 @@ irqreturn_t irq_handler (int, void *);
 #define OUT_BUF_SIZE    	sizeof(pid_t)
 
 // Number of interrupt to capture
-#define INTERRUPT_NO    	48
+#define INTERRUPT_NO    	32
 
 
 /*
