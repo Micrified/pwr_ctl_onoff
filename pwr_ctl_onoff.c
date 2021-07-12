@@ -16,7 +16,7 @@ irqreturn_t irq_handler (int, void *);
 
 
 // Number of interrupt to capture
-#define INTERRUPT_NO    	36
+#define INTERRUPT_NO    	45
 
 
 static int __init pwr_ctl_init (void)
@@ -35,7 +35,7 @@ static void __exit pwr_ctl_exit (void)
 
 irqreturn_t irq_handler (int irq, void *dev_irq)
 {
-	pr_err("interrupt!\n");
+	pr_err("interrupt (%d)!\n", irq);
 	return IRQ_HANDLED;
 }
 
